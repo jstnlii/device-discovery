@@ -40,21 +40,30 @@ COMMON_PORTS = {
 # PING SWEEP — discover live hosts
 # ─────────────────────────────────────────
 def ping_host(ip):
-    """Returns True if host responds to ping."""
+    """
+    Returns True if host responds to ping.
+    """
+
     param = "-n" if platform.system().lower() == "windows" else "-c"
     timeout_param = "-w" if platform.system().lower() == "windows" else "-W"
+
     command = ["ping", param, "1", timeout_param, str(PING_TIMEOUT), str(ip)]
-    result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) # mute STDOUT and STDERR outputs for console
+    
     return result.returncode == 0
 
 def discover_hosts(subnet):
-    """Ping sweep entire subnet, return list of live IPs."""
+    """
+    Ping sweep entire subnet, return list of live IPs.
+    """
+
     print(f"\n[*] Scanning subnet {subnet} for live hosts...")
     network = ipaddress.IPv4Network(subnet, strict=False)
     live_hosts = []
 
     with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         futures = {executor.submit(ping_host, str(ip)): str(ip) for ip in network.hosts()}
+
         for future in as_completed(futures):
             ip = futures[future]
             if future.result():
