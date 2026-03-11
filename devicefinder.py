@@ -90,7 +90,9 @@ def scan_port(ip, port):
         return None
 
 def scan_ports(ip):
-    """Scan all common ports on a host, return dict of open ports."""
+    """
+    Scan all common ports on a host, return dict of open ports.
+    """
     open_ports = {}
     with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         futures = {executor.submit(scan_port, ip, port): port for port in COMMON_PORTS}
@@ -121,8 +123,7 @@ def get_mac(ip):
     try:
         # ping to populate ARP cache
         param = "-n" if platform.system().lower() == "windows" else "-c"
-        subprocess.run(["ping", param, "1", str(ip)],
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["ping", param, "1", str(ip)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # read ARP cache
         if platform.system().lower() == "windows":
@@ -163,7 +164,10 @@ def get_manufacturer(mac):
 # MAIN — build inventory
 # ─────────────────────────────────────────
 def scan_host(ip):
-    """Full scan of a single host — returns device record."""
+    """
+    Full scan of a single host — returns device record.
+    """
+
     print(f"\n[*] Scanning {ip}...")
 
     hostname = get_hostname(ip)
