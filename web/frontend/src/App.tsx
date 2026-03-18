@@ -1,0 +1,339 @@
+import { useEffect, useRef, useState } from 'react'
+import './App.css'
+import { cancelScan, getScan, getScans, startScan } from './api'
+import type { InventoryResponse, ScanSummary, ScanStatus } from './types'
+
+function deviceOpenPortsToText(open_ports: InventoryResponse['devices'][number]['open_ports']) {
+  const entries = Object.entries(open_ports ?? {})
+  if (entries.length === 0) return ''
+  return entries.map(([port, service]) => `${port} (${service})`).join(', ')
+}
+
+type Stage = 'queued' | 'discovering' | 'scanning' | 'done' | 'cancelled' | 'failed'
+
+function getStage(status: ScanStatus | null): Stage {
+  if (!status) return 'queued'
+  if (status.state === 'failed') return 'failed'
+  if (status.state === 'completed') return 'done'
+  if (status.state === 'cancelled') return 'cancelled'
+
+  const msg = (status.progress.message ?? '').toLowerCase()
+  if (msg.includes('cancel')) return 'cancelled'
+  if (msg.includes('discover')) return 'discovering'
+  if (msg.includes('scanning discovered') || msg.includes('scanning discovered hosts')) return 'scanning'
+  if (status.progress.current_ip) return 'scanning'
+  return status.state === 'queued' ? 'queued' : 'discovering'
+}
+
+function stageLabel(stage: Stage) {
+  switch (stage) {
+    case 'queued':
+      return 'Queued'
+    case 'discovering':
+      return 'Discovering live hosts'
+    case 'scanning':
+      return 'Scanning discovered hosts'
+    case 'done':
+      return 'Inventory ready'
+    case 'cancelled':
+      return 'Scan cancelled'
+    case 'failed':
+      return 'Scan failed'
+  }
+}
+
+function getProgressPercent(status: ScanStatus | null): number | null {
+  if (!status) return null
+  const total = status.progress.total_devices
+  const scanned = status.progress.devices_scanned
+  if (!total || total <= 0) return null
+  const p = (scanned / total) * 100
+  if (Number.isNaN(p)) return null
+  return Math.max(0, Math.min(100, p))
+}
+
+function App() {
+  const [subnet, setSubnet] = useState('10.0.0.0/24')
+  const [scanHistory, setScanHistory] = useState<ScanSummary[]>([])
+  const [scanId, setScanId] = useState<string | null>(null)
+  const [status, setStatus] = useState<ScanStatus | null>(null)
+  const [inventory, setInventory] = useState<InventoryResponse | null>(null)
+  const [starting, setStarting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const pollRef = useRef<number | null>(null)
+
+  async function refreshHistory() {
+    const next = await getScans()
+    setScanHistory(next)
+  }
+
+  async function refreshScan(id: string) {
+    const res = await getScan(id)
+    setStatus(res.scan)
+    setInventory(res.inventory ?? null)
+    return res.scan.state
+  }
+
+  function stopPolling() {
+    if (pollRef.current !== null) {
+      window.clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }
+
+  async function startNewScan() {
+    setError(null)
+    setStarting(true)
+    stopPolling()
+
+    try {
+      const started = await startScan(subnet)
+      setScanId(started.scan_id)
+      setStatus(null)
+      setInventory(null)
+
+      await refreshHistory()
+      // `useEffect([scanId])` will fetch + poll as needed.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshHistory().catch((e) => setError(e instanceof Error ? e.message : String(e)))
+  }, [])
+
+  useEffect(() => {
+    // If user selects a previous scan, fetch it once (and don't poll unless it is actively running).
+    if (!scanId) return
+    stopPolling()
+
+    ;(async () => {
+      const state = await refreshScan(scanId)
+      if (state === 'running' || state === 'queued') {
+        pollRef.current = window.setInterval(async () => {
+          await refreshScan(scanId)
+        }, 1000)
+      }
+    })().catch((e) => setError(e instanceof Error ? e.message : String(e)))
+
+    return () => stopPolling()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanId])
+
+  useEffect(() => {
+    if (!status) return
+    if (status.state === 'completed' || status.state === 'failed' || status.state === 'cancelled') {
+      stopPolling()
+      refreshHistory().catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.state])
+
+  async function cancelCurrentScan() {
+    if (!scanId) return
+    setError(null)
+    setCancelling(true)
+    try {
+      await cancelScan(scanId)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div className="brand">
+          <h1 className="brand-title">Device Discovery</h1>
+          <p className="brand-subtitle">Start a scan and view clean inventory results.</p>
+        </div>
+      </header>
+
+      <main className="layout">
+        <section className="panel">
+          <h2 className="panel-title">Scan</h2>
+
+          <div className="row">
+            <label className="label" htmlFor="subnet">
+              Subnet (CIDR)
+            </label>
+            <input
+              id="subnet"
+              className="input"
+              value={subnet}
+              onChange={(e) => setSubnet(e.target.value)}
+              disabled={starting}
+              placeholder="10.0.0.0/24"
+              spellCheck={false}
+              inputMode="text"
+            />
+          </div>
+
+          <div className="actions">
+            <button className="btn primary" onClick={startNewScan} disabled={starting}>
+              {starting ? 'Starting...' : 'Start Scan'}
+            </button>
+            <button
+              className="btn"
+              onClick={() => refreshHistory().catch((e) => setError(e instanceof Error ? e.message : String(e)))}
+              disabled={starting}
+            >
+              Refresh History
+            </button>
+          </div>
+
+          {error ? <div className="error">{error}</div> : null}
+
+          <div className="divider" />
+
+          <h2 className="panel-title">Scan History</h2>
+          <div className="history">
+            {scanHistory.length === 0 ? (
+              <div className="muted">No scans yet.</div>
+            ) : (
+              scanHistory.map((s) => (
+                <button
+                  key={s.scan_id}
+                  className={`history-item ${scanId === s.scan_id ? 'active' : ''}`}
+                  onClick={() => setScanId(s.scan_id)}
+                >
+                  <div className="history-item-top">
+                    <span className="history-id">{s.scan_id.slice(0, 8)}</span>
+                    <span className={`pill ${s.state}`}>{s.state}</span>
+                  </div>
+                  <div className="history-item-bottom">
+                    <span>{s.hosts_found ?? 0} host(s)</span>
+                    <span className="dot">•</span>
+                    <span>{s.scan_time ? new Date(s.scan_time).toLocaleString() : '—'}</span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="panel wide results">
+          <h2 className="panel-title">Results</h2>
+
+          {!scanId ? <div className="muted">Select a scan (or start a new one).</div> : null}
+
+          {scanId && status ? (
+            <div className="status">
+              <div className="status-head">
+                <span className={`pill ${status.state}`}>{status.state}</span>
+                <div className="status-meta">
+                  {status.progress.current_ip ? <span className="muted">Current: {status.progress.current_ip}</span> : null}
+                </div>
+              </div>
+
+              {status.progress.message ? <div className="status-message">{status.progress.message}</div> : null}
+
+              <div className="stage">
+                <div className="stage-label">{stageLabel(getStage(status))}</div>
+                <div className="stage-bar" aria-hidden="true">
+                  {getProgressPercent(status) === null ? (
+                    <div className="stage-bar-indeterminate" />
+                  ) : (
+                    <div className="stage-bar-fill" style={{ width: `${getProgressPercent(status) ?? 0}%` }} />
+                  )}
+                </div>
+                <div className="stage-sub">
+                  {status.progress.total_devices ? (
+                    <>
+                      {status.progress.devices_scanned}/{status.progress.total_devices} devices scanned
+                    </>
+                  ) : (
+                    <span className="muted">Scanning in progress…</span>
+                  )}
+                </div>
+
+                {status.state === 'queued' || status.state === 'running' ? (
+                  <div className="cancel-row">
+                    <button className="btn danger" onClick={cancelCurrentScan} disabled={cancelling || starting}>
+                      {cancelling ? 'Cancelling…' : 'Cancel Scan'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              {status.state !== 'failed' && inventory && (status.state === 'completed' || status.state === 'cancelled') ? (
+                <div className="summary">
+                  <div className="summary-item">
+                    <div className="summary-k">Hosts</div>
+                    <div className="summary-v">{inventory.scan_metadata.hosts_found}</div>
+                  </div>
+                  <div className="summary-item">
+                    <div className="summary-k">Duration</div>
+                    <div className="summary-v">{inventory.scan_metadata.duration_seconds}s</div>
+                  </div>
+                </div>
+              ) : null}
+
+              {status.state === 'failed' && status.error ? <div className="error">{status.error}</div> : null}
+            </div>
+          ) : null}
+
+          {scanId && inventory ? (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>IP</th>
+                    <th>Hostname</th>
+                    <th>MAC</th>
+                    <th>Manufacturer</th>
+                    <th>Open Ports</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.devices.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="muted">
+                        No devices found.
+                      </td>
+                    </tr>
+                  ) : (
+                    inventory.devices.map((d) => (
+                      <tr key={d.ip}>
+                        <td className="mono">{d.ip}</td>
+                        <td>{d.hostname}</td>
+                        <td className="mono">{d.mac}</td>
+                        <td>{d.manufacturer}</td>
+                        <td title={deviceOpenPortsToText(d.open_ports)}>
+                          {Object.keys(d.open_ports).length === 0 ? (
+                            <span className="muted">—</span>
+                          ) : (
+                            <div className="chips">
+                              {Object.entries(d.open_ports).map(([port, service]) => (
+                                <span key={port} className="chip">
+                                  <span className="chip-port">{port}</span>
+                                  <span className="chip-sep">/</span>
+                                  <span className="chip-svc">{service}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : scanId && status && (status.state === 'queued' || status.state === 'running') ? (
+            <div className="muted">Scanning… results will appear when completed.</div>
+          ) : null}
+        </section>
+      </main>
+    </div>
+  )
+}
+
+export default App
