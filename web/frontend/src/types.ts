@@ -47,3 +47,15 @@ export type GetScanResponse = {
   inventory?: InventoryResponse | null
 }
 
+export type LocalSubnet = {
+  interface: string
+  ip: string
+  netmask: string
+  cidr: string
+}
+
+export type LocalNetworkResponse = {
+  detected: LocalSubnet | null
+  interfaces: LocalSubnet[]
+}
+

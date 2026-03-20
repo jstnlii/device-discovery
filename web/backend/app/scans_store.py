@@ -9,15 +9,39 @@ from typing import Any, Dict, List, Optional
 from .models import ScanState, ScanStatus
 
 
+LOG_PATH = Path("/Users/justinli/Documents/Code/2026/.cursor/debug-8721f5.log")
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _debug_log(run_id: str, hypothesis_id: str, location: str, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+    try:
+        # Ensure the parent directory exists (in case this path isn't present).
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "sessionId": "8721f5",
+            "runId": run_id,
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+            "timestamp": int(datetime.now(timezone.utc).timestamp() * 1000),
+        }
+        with open(LOG_PATH, "a") as f:
+            f.write(json.dumps(payload) + "\n")
+    except Exception as e:
+        # Keep debug logging best-effort. If file writing fails, still print so we have evidence.
+        print(f"[debug_log_write_failed] {location}: {e}")
 
 
 class ScansStore:
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
         self.root_dir.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # RLock: list_scan_summaries holds lock and calls get_status which also needs it
 
     def scan_dir(self, scan_id: str) -> Path:
         return self.root_dir / scan_id
@@ -73,8 +97,11 @@ class ScansStore:
     def get_status(self, scan_id: str) -> Optional[ScanStatus]:
         path = self.status_path(scan_id)
         if not path.exists():
+            _debug_log("baseline", "H1", "scans_store.py:get_status", "status_path_missing", {"scan_id": scan_id})
             return None
+        _debug_log("baseline", "H1", "scans_store.py:get_status", "before_lock", {"scan_id": scan_id})
         with self._lock:
+            _debug_log("baseline", "H1", "scans_store.py:get_status", "after_lock", {"scan_id": scan_id})
             with open(path, "r") as f:
                 payload = json.load(f)
             return ScanStatus.model_validate(payload)
@@ -88,7 +115,9 @@ class ScansStore:
                 return json.load(f)
 
     def list_scan_summaries(self, limit: int = 50) -> List[Dict[str, Any]]:
+        _debug_log("baseline", "H1", "scans_store.py:list_scan_summaries", "before_lock", {"limit": limit})
         with self._lock:
+            _debug_log("baseline", "H1", "scans_store.py:list_scan_summaries", "after_lock", {"root_dir": str(self.root_dir)})
             if not self.root_dir.exists():
                 return []
 
@@ -96,6 +125,7 @@ class ScansStore:
             for d in self.root_dir.iterdir():
                 if not d.is_dir():
                     continue
+                _debug_log("baseline", "H1", "scans_store.py:list_scan_summaries", "before_get_status", {"scan_id": d.name})
                 status = self.get_status(d.name)
                 if not status:
                     continue

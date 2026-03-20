@@ -1,25 +1,29 @@
 from __future__ import annotations
 
-import ipaddress
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+from device_discover.networking import normalize_subnet_input
 
 
 ScanState = Literal["queued", "running", "completed", "failed", "cancelled"]
 
 
 class StartScanRequest(BaseModel):
-    subnet: str = Field(..., description="IPv4 CIDR, e.g. 10.0.0.0/24")
+    subnet: str = Field(
+        ...,
+        description="Subnet input. Accepts CIDR (e.g. 10.0.0.0/24) or an IP (e.g. 10.0.0.187) which is converted using detected local networks.",
+    )
+    skip_ping_sweep: bool = Field(
+        default=False,
+        description="If true, skips ICMP ping discovery and scans the whole CIDR instead (useful when ICMP is blocked).",
+    )
 
     @field_validator("subnet")
     @classmethod
     def validate_subnet(cls, v: str) -> str:
-        try:
-            net = ipaddress.IPv4Network(v, strict=False)
-        except Exception as e:
-            raise ValueError(f"Invalid IPv4 CIDR: {v}") from e
-        return str(net)
+        return normalize_subnet_input(v)
 
 
 class StartScanResponse(BaseModel):

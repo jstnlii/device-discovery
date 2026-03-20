@@ -28,7 +28,7 @@ class ScanManager:
         self._cancel_events: Dict[str, threading.Event] = {}
         self._cancel_lock = threading.Lock()
 
-    def start_scan(self, subnet: str) -> str:
+    def start_scan(self, subnet: str, *, skip_ping_sweep: bool = False) -> str:
         # Prevent accidentally starting a massive scan from the UI.
         net = ipaddress.IPv4Network(subnet, strict=False)
         prefixlen = net.prefixlen
@@ -47,7 +47,7 @@ class ScanManager:
             self._cancel_events[scan_id] = cancel_event
         # Create initial queued state on disk immediately.
         self.store.init_scan(scan_id=scan_id, state="queued")
-        self.executor.submit(self._run_scan_job, scan_id, subnet, cancel_event)
+        self.executor.submit(self._run_scan_job, scan_id, subnet, cancel_event, skip_ping_sweep)
         return scan_id
 
     def cancel_scan(self, scan_id: str) -> bool:
@@ -106,7 +106,13 @@ class ScanManager:
                 # `write_status` will bump updated_at.
                 self.store.write_status(status)
 
-    def _run_scan_job(self, scan_id: str, subnet: str, cancel_event: threading.Event) -> None:
+    def _run_scan_job(
+        self,
+        scan_id: str,
+        subnet: str,
+        cancel_event: threading.Event,
+        skip_ping_sweep: bool,
+    ) -> None:
         def on_event(event: Dict[str, Any]) -> None:
             if cancel_event.is_set():
                 return
@@ -144,7 +150,7 @@ class ScanManager:
                 )
 
         try:
-            cfg = ScannerConfig(subnet=subnet)
+            cfg = ScannerConfig(subnet=subnet, discover_via_ping=not skip_ping_sweep)
 
             # Pre-set an updated message so the UI doesn't show stale "queued".
             self._update_progress(scan_id, state="running", message="Starting...")

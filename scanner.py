@@ -19,6 +19,12 @@ class ScannerConfig:
     port_scan_timeout: float = 0.5
     ping_timeout: int = 1
     max_threads: int = 50
+    # When True, discovery is done via ICMP ping sweep first.
+    # Some networks block ICMP; setting this to False makes scanning run
+    # across the whole CIDR (safer + more reliable, but can be slower).
+    discover_via_ping: bool = True
+    # Safety cap when `discover_via_ping` is False (or when a large subnet is provided).
+    max_discovered_hosts: Optional[int] = 1024
 
 
 @dataclass(frozen=True)
@@ -103,6 +109,16 @@ def discover_hosts(
     Ping sweep entire subnet, return list of live IPs.
     """
     network = ipaddress.IPv4Network(subnet, strict=False)
+    if not config.discover_via_ping:
+        live_hosts: List[str] = []
+        for ip in network.hosts():
+            if _cancelled(cancel_event):
+                break
+            live_hosts.append(str(ip))
+            if config.max_discovered_hosts is not None and len(live_hosts) >= config.max_discovered_hosts:
+                break
+        return live_hosts
+
     live_hosts: List[str] = []
 
     with ThreadPoolExecutor(max_workers=config.max_threads) as executor:
