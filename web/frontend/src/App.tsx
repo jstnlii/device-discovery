@@ -391,7 +391,7 @@ function App() {
                 onChange={(e) => setSkipPingSweep(e.target.checked)}
                 disabled={starting}
               />
-              Skip ping sweep (ICMP can be blocked)
+              Scan every address (ICMP can be blocked)
               <span className="hint-trigger" aria-label="More info">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="7" cy="7" r="6.25" stroke="currentColor" strokeWidth="1.5" fill="none" />
