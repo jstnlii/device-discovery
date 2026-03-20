@@ -167,7 +167,7 @@
 
   &::before,
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -4.5px;
     border: 5px solid transparent;
@@ -304,7 +304,9 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: opacity 0.2s, background 0.2s;
+  transition:
+    opacity 0.2s,
+    background 0.2s;
 }
 
 .btn-clear:hover:not(:disabled) {
@@ -343,7 +345,9 @@
   background: var(--code-bg);
   color: var(--text-h);
   caret-color: var(--accent);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .input:focus {
@@ -374,16 +378,21 @@
   .chip {
     background: var(--accent-muted);
   }
-
 }
 
 .btn {
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border);
+  border: 0px solid var(--border);
   background: transparent;
   color: var(--text-h);
   cursor: pointer;
+  font-family: var(--sans);
+  outline: none;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg-elevated), 0 0 0 4px var(--accent);
 }
 
 .btn.primary {
@@ -499,7 +508,10 @@
   background: var(--bg-elevated);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s ease;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.15s ease;
 }
 
 .history-item:hover {
@@ -758,7 +770,10 @@
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease;
 }
 
 .checkbox-row-with-hint:has(.hint-trigger:hover) .hint-tooltip {
@@ -776,7 +791,7 @@
   user-select: none;
 }
 
-.checkbox input[type='checkbox'] {
+.checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
