@@ -322,6 +322,7 @@ function App() {
         selectedScan &&
         selectedScan.state !== "queued" &&
         selectedScan.state !== "running";
+      // Clear selection first so the right panel updates immediately
       if (wasSelectedDeleted) {
         setScanId(null);
         setStatus(null);
@@ -407,20 +408,28 @@ function App() {
           </div>
 
           {localNetwork?.detected ? (
-            <div className="detect-hint">
-              Detected:{" "}
-              <span className="mono">{localNetwork.detected.cidr}</span> (IP{" "}
-              <span className="mono">{localNetwork.detected.ip}</span>, netmask{" "}
-              <span className="mono">{localNetwork.detected.netmask}</span>)
-              <div className="detect-actions">
-                <button
-                  className="btn"
-                  disabled={starting || detectingNetwork}
-                  onClick={() => setSubnet(localNetwork.detected?.cidr ?? "")}
-                >
-                  Use detected subnet
-                </button>
+            <div className="detect-card">
+              <div className="detect-card-body">
+                <div className="detect-card-main">
+                  <span className="detect-label">Detected network:</span>
+                  <span className="detect-cidr mono">
+                    {localNetwork.detected.cidr}
+                  </span>
+                </div>
+                <div className="detect-card-meta">
+                  <div>This machine: {localNetwork.detected.ip}</div>
+                  <div>Netmask: {localNetwork.detected.netmask}</div>
+                </div>
               </div>
+              <button
+                className="btn btn-sm primary"
+                disabled={starting || detectingNetwork}
+                onClick={() =>
+                  setSubnet(localNetwork.detected?.cidr ?? "")
+                }
+              >
+                Use
+              </button>
             </div>
           ) : null}
 
@@ -468,22 +477,36 @@ If your network blocks pings (common on work or school networks), or if the scan
             </button>
           </div>
 
-          {error ? <div className="error">{error}</div> : null}
-
-          <div className="divider" />
-
-          <h2 className="panel-title">Scan History</h2>
-          {scanHistory.length > 0 ? (
-            <div className="actions" style={{ marginBottom: "0.75rem" }}>
+          {error ? (
+            <div className="error">
+              {error}
               <button
-                className="btn danger"
-                onClick={handleClearHistory}
-                disabled={clearing || starting}
+                type="button"
+                className="error-dismiss"
+                onClick={() => setError(null)}
+                aria-label="Dismiss"
               >
-                {clearing ? "Clearing…" : "Clear History"}
+                ×
               </button>
             </div>
           ) : null}
+
+          <div className="divider" />
+
+          <div className="section-header">
+            <h2 className="panel-title">Scan History</h2>
+            {scanHistory.length > 0 ? (
+              <button
+                type="button"
+                className="btn-clear"
+                onClick={handleClearHistory}
+                disabled={clearing || starting}
+                title="Remove completed scans from history"
+              >
+                {clearing ? "Clearing…" : "Clear history"}
+              </button>
+            ) : null}
+          </div>
           <div className="history">
             {scanHistory.length === 0 ? (
               <div className="muted">No scans yet.</div>
@@ -541,26 +564,30 @@ If your network blocks pings (common on work or school networks), or if the scan
                 <div className="stage-label">
                   {stageLabel(getStage(status))}
                 </div>
-                <div className="stage-bar" aria-hidden="true">
-                  {getProgressPercent(status) === null ? (
-                    <div className="stage-bar-indeterminate" />
-                  ) : (
-                    <div
-                      className="stage-bar-fill"
-                      style={{ width: `${getProgressPercent(status) ?? 0}%` }}
-                    />
-                  )}
-                </div>
-                <div className="stage-sub">
-                  {status.progress.total_devices ? (
-                    <>
-                      {status.progress.devices_scanned}/
-                      {status.progress.total_devices} devices scanned
-                    </>
-                  ) : (
-                    <span className="muted">Scanning in progress…</span>
-                  )}
-                </div>
+                {(status.state === "queued" || status.state === "running") ? (
+                  <>
+                    <div className="stage-bar" aria-hidden="true">
+                      {getProgressPercent(status) === null ? (
+                        <div className="stage-bar-indeterminate" />
+                      ) : (
+                        <div
+                          className="stage-bar-fill"
+                          style={{ width: `${getProgressPercent(status) ?? 0}%` }}
+                        />
+                      )}
+                    </div>
+                    <div className="stage-sub">
+                      {status.progress.total_devices ? (
+                        <>
+                          {status.progress.devices_scanned}/
+                          {status.progress.total_devices} devices scanned
+                        </>
+                      ) : (
+                        <span className="muted">Scanning in progress…</span>
+                      )}
+                    </div>
+                  </>
+                ) : null}
 
                 {status.state === "queued" || status.state === "running" ? (
                   <div className="cancel-row">
@@ -600,7 +627,20 @@ If your network blocks pings (common on work or school networks), or if the scan
             </div>
           ) : null}
 
-          {scanId && inventory ? (
+          {scanId && inventory && inventory.devices.length === 0 ? (
+            <div className="empty-scan">
+              <p className="empty-scan-title">No devices found</p>
+              <p className="empty-scan-desc">
+                The scan completed but didn&apos;t detect any hosts on the
+                network. This can happen if the subnet doesn&apos;t match your
+                network, devices block ping, or the network is offline.
+              </p>
+              <p className="empty-scan-hint">
+                Try a different subnet or enable &quot;Scan every address&quot;
+                if your network blocks ICMP ping.
+              </p>
+            </div>
+          ) : scanId && inventory ? (
             <div className="table-wrap">
               <table className="table">
                 <thead>
@@ -613,14 +653,7 @@ If your network blocks pings (common on work or school networks), or if the scan
                   </tr>
                 </thead>
                 <tbody>
-                  {inventory.devices.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="muted">
-                        No devices found.
-                      </td>
-                    </tr>
-                  ) : (
-                    inventory.devices.map((d) => (
+                  {inventory.devices.map((d) => (
                       <tr key={d.ip}>
                         <td className="mono">{d.ip}</td>
                         <td>{d.hostname}</td>
@@ -644,8 +677,7 @@ If your network blocks pings (common on work or school networks), or if the scan
                           )}
                         </td>
                       </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -267,6 +267,41 @@
   margin: 0 0 12px;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-header .panel-title {
+  margin: 0;
+}
+
+.btn-clear {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.75;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.btn-clear:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(255, 0, 0, 0.06);
+  color: rgba(255, 0, 0, 0.9);
+}
+
+.btn-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .results {
   min-height: 520px;
 }
@@ -354,6 +389,8 @@
 .error {
   margin-top: 12px;
   padding: 10px 12px;
+  padding-right: 36px;
+  position: relative;
   border: 1px solid rgba(255, 0, 0, 0.3);
   border-radius: 10px;
   background: rgba(255, 0, 0, 0.05);
@@ -362,10 +399,65 @@
   text-align: left;
 }
 
+.error-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .divider {
   height: 1px;
   background: var(--border);
   margin: 16px 0;
+}
+
+.empty-scan {
+  padding: 24px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-h);
+}
+
+.empty-scan-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.empty-scan-desc {
+  margin: 0 auto 12px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+.empty-scan-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.85;
 }
 
 .history {
@@ -521,20 +613,60 @@
   justify-content: flex-end;
 }
 
-.detect-hint {
+.detect-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   margin-top: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgba(170, 59, 255, 0.06);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(170, 59, 255, 0.04);
   text-align: left;
-  font-size: 14px;
 }
 
-.detect-actions {
-  margin-top: 10px;
+.detect-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.detect-card-main {
   display: flex;
-  justify-content: flex-end;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.detect-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+.detect-cidr {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.detect-card-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .checkbox-row {
@@ -556,7 +688,7 @@
   flex-shrink: 0;
 }
 
-.checkbox-row-with-hint:hover .hint-trigger {
+.hint-trigger:hover {
   opacity: 1;
 }
 
@@ -584,7 +716,7 @@
   transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
 }
 
-.checkbox-row-with-hint:hover .hint-tooltip {
+.checkbox-row-with-hint:has(.hint-trigger:hover) .hint-tooltip {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -606,8 +738,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .detect-hint {
-    background: rgba(192, 132, 252, 0.14);
+  .detect-card {
+    background: rgba(192, 132, 252, 0.06);
   }
 }
 
