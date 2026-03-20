@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -144,4 +145,36 @@ class ScansStore:
 
             items.sort(key=lambda x: x.get("updated_at") or "", reverse=True)
             return items[:limit]
+
+    def delete_scan(self, scan_id: str) -> bool:
+        """Remove a scan directory. Returns True if deleted, False if not found."""
+        with self._lock:
+            path = self.scan_dir(scan_id)
+            if path.exists() and path.is_dir():
+                shutil.rmtree(path)
+                return True
+            return False
+
+    def clear_history(
+        self,
+        *,
+        exclude_states: Optional[tuple[str, ...]] = ("queued", "running"),
+    ) -> int:
+        """Delete scans that are not in exclude_states. Returns number deleted."""
+        with self._lock:
+            if not self.root_dir.exists():
+                return 0
+            excluded = exclude_states or ()
+            deleted = 0
+            for d in list(self.root_dir.iterdir()):
+                if not d.is_dir():
+                    continue
+                status = self.get_status(d.name)
+                if not status:
+                    continue
+                if status.state in excluded:
+                    continue
+                shutil.rmtree(d)
+                deleted += 1
+            return deleted
 

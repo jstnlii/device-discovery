@@ -135,6 +135,11 @@ def create_app() -> FastAPI:
             ],
         }
 
+    @app.delete("/api/scans")
+    def clear_scan_history() -> Dict[str, Any]:
+        deleted = store.clear_history(exclude_states=("queued", "running"))
+        return {"deleted": deleted}
+
     @app.post("/api/scans/{scan_id}/cancel")
     def cancel_scan(scan_id: str) -> Dict[str, Any]:
         _debug_log("baseline", "H4", "main.py:cancel_scan", "request_received", {"scan_id": scan_id})

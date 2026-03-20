@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import {
   cancelScan,
+  clearScanHistory,
   getLocalNetwork,
   getScan,
   getScans,
@@ -80,6 +81,7 @@ function App() {
   const [inventory, setInventory] = useState<InventoryResponse | null>(null);
   const [starting, setStarting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localNetwork, setLocalNetwork] = useState<LocalNetworkResponse | null>(
     null,
@@ -303,6 +305,45 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.state]);
 
+  async function handleClearHistory() {
+    if (
+      !window.confirm(
+        "Permanently delete all scan history? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    setClearing(true);
+    try {
+      const { deleted } = await clearScanHistory();
+      const selectedScan = scanHistory.find((s) => s.scan_id === scanId);
+      const wasSelectedDeleted =
+        selectedScan &&
+        selectedScan.state !== "queued" &&
+        selectedScan.state !== "running";
+      if (wasSelectedDeleted) {
+        setScanId(null);
+        setStatus(null);
+        setInventory(null);
+      }
+      await refreshHistory();
+      if (deleted > 0) {
+        setError(null);
+        // Brief positive feedback - could use a toast if we had one
+        window.alert(`Cleared ${deleted} scan(s) from history.`);
+      } else {
+        window.alert(
+          "No scans to clear. (Running or queued scans are kept.)"
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setClearing(false);
+    }
+  }
+
   async function cancelCurrentScan() {
     if (!scanId) return;
     setError(null);
@@ -432,6 +473,17 @@ If your network blocks pings (common on work or school networks), or if the scan
           <div className="divider" />
 
           <h2 className="panel-title">Scan History</h2>
+          {scanHistory.length > 0 ? (
+            <div className="actions" style={{ marginBottom: "0.75rem" }}>
+              <button
+                className="btn danger"
+                onClick={handleClearHistory}
+                disabled={clearing || starting}
+              >
+                {clearing ? "Clearing…" : "Clear History"}
+              </button>
+            </div>
+          ) : null}
           <div className="history">
             {scanHistory.length === 0 ? (
               <div className="muted">No scans yet.</div>

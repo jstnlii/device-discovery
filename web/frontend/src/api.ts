@@ -33,6 +33,15 @@ export async function getScan(scanId: string): Promise<GetScanResponse> {
   return res.json()
 }
 
+export async function clearScanHistory(): Promise<{ deleted: number }> {
+  const res = await fetch(`${API_BASE}/scans`, { method: 'DELETE' })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`Failed to clear scan history: ${res.status} ${text}`.trim())
+  }
+  return res.json()
+}
+
 export async function cancelScan(scanId: string): Promise<{ cancelled: boolean }> {
   const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(scanId)}/cancel`, {
     method: 'POST',
