@@ -382,7 +382,7 @@ function App() {
         <div className="brand">
           <h1 className="brand-title">Device Discovery</h1>
           <p className="brand-subtitle">
-            Start a scan and view clean inventory results.
+            Scan your network and discover connected devices
           </p>
         </div>
       </header>
@@ -411,7 +411,7 @@ function App() {
             <div className="detect-card">
               <div className="detect-card-body">
                 <div className="detect-card-main">
-                  <span className="detect-label">Detected network:</span>
+                  <span className="detect-label">Auto-detected network</span>
                   <span className="detect-cidr mono">
                     {localNetwork.detected.cidr}
                   </span>
