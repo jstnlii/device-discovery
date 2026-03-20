@@ -228,12 +228,16 @@
 
 .layout {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 420px 1fr;
   gap: 16px;
   align-items: start;
+}
+
+.layout > * {
+  min-width: 0; /* allow grid children to shrink below content */
 }
 
 @media (max-width: 1024px) {
@@ -256,6 +260,7 @@
 
 .panel.wide {
   padding: 16px;
+  min-width: 0; /* allow grid child to shrink below content size */
 }
 
 .panel-title {
@@ -536,6 +541,55 @@
   margin-top: 10px;
 }
 
+.checkbox-row-with-hint {
+  position: relative;
+}
+
+.hint-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  color: var(--accent);
+  opacity: 0.7;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.checkbox-row-with-hint:hover .hint-trigger {
+  opacity: 1;
+}
+
+.hint-tooltip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  padding: 12px 14px;
+  max-width: 340px;
+  white-space: pre-line;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-h);
+  text-align: left;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+.checkbox-row-with-hint:hover .hint-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .checkbox {
   display: flex;
   align-items: center;
@@ -591,13 +645,15 @@
 }
 
 .table-wrap {
-  overflow: auto;
+  overflow-x: auto; /* fallback for very narrow viewports */
   border-radius: 12px;
   border: 1px solid var(--border);
 }
 
 .table {
   width: 100%;
+  min-width: 0;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -607,6 +663,42 @@
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-size: 14px;
+}
+
+/* IP and MAC stay on one line */
+.table th:nth-child(1),
+.table td:nth-child(1),
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+/* column width distribution - IP/MAC get enough room, Open Ports gets most for chips */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 15%;
+  min-width: 11ch;
+}
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 14%;
+}
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 20%;
+  min-width: 18ch;
+  padding-right: 22px; /* extra space before Manufacturer for readability */
+}
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 18%;
+}
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 33%;
 }
 
 .table th {
@@ -650,4 +742,17 @@
 
 .mono {
   font-family: var(--mono);
+}
+
+/* compact table on narrow viewports so it fits without horizontal scroll */
+@media (max-width: 640px) {
+  .table th,
+  .table td {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .chip {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
 }

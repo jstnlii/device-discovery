@@ -383,7 +383,7 @@ function App() {
             </div>
           ) : null}
 
-          <div className="checkbox-row">
+          <div className="checkbox-row checkbox-row-with-hint">
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -392,7 +392,18 @@ function App() {
                 disabled={starting}
               />
               Skip ping sweep (ICMP can be blocked)
+              <span className="hint-trigger" aria-label="More info">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="7" cy="7" r="6.25" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  <path d="M7 6.5v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </span>
             </label>
+            <div className="hint-tooltip" role="tooltip">
+              {`When unchecked, the scan sends a broadcast signal to all devices on the network (called a "ping sweep") to see which devices respond, then only checks those for efficiency.
+
+If your network blocks pings (common on work or school networks), or if the scan isn't finding devices you expect, check this box. The scan will iteratively try every address instead. It takes longer but works when ping is blocked.`}
+            </div>
           </div>
 
           <div className="actions">
