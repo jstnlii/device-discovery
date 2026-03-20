@@ -61,10 +61,10 @@ OUI_TABLE: Dict[str, str] = {
     "f0:b4:29": "Apple",
     "3c:95:09": "Samsung",
     "00:80:92": "Nortel Networks",
-    "4e:8e:66": "Unknown",
-    "76:cd:f3": "Unknown",
+    "4e:8e:66": "unknown",
+    "76:cd:f3": "unknown",
     "82:32:4b": "Apple",
-    "26:13:4a": "Unknown",
+    "26:13:4a": "unknown",
 }
 
 
