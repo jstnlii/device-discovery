@@ -30,7 +30,7 @@ python3 cli.py --subnet 172.22.172.0/24
 python3 cli.py --subnet 172.22.172.92    # plain IP, resolved via your local networks
 ```
 
-- Use `--skip-ping-sweep` if ICMP is blocked on your network.
+- Use `--skip-ping-sweep` if ICMP is blocked on your network. This will attempt to scan every single IP address.
 - Run `python3 cli.py --help` for all options.
 
 ### Web UI (backend + frontend)
@@ -48,7 +48,7 @@ uvicorn app.main:app --reload --port 8008
 ```bash
 cd web/frontend
 npm install
-npm run dev -- --port 5173
+npm run dev
 ```
 
 Then open **http://localhost:5173**.

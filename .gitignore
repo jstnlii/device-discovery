@@ -1,9 +1,7 @@
 .DS_Store
 __pycache__/
 
-# JSON outputs (keep data/ports.json - required for scanning)
-*.json
-!data/ports.json
+# Generated JSON outputs only (config JSONs like package.json, tsconfig.json, data/ports.json are tracked)
 inventory_*.json
 
 # Python venvs (created locally for backend)
