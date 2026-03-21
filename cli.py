@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +17,7 @@ MAX_THREADS = 50  # concurrent threads
 
 def _ensure_import_path() -> None:
     """
-    When running `python devicefinder.py` from within the `device_discover/` folder,
+    When running `python cli.py` from within the `device_discover/` folder,
     Python's sys.path points at that folder and the `device_discover` package import
     can fail. This adds the parent directory so the package is importable.
     """
@@ -53,7 +54,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     _ensure_import_path()
 
-    # Import after sys.path fix so `python devicefinder.py` works when run from
+    # Import after sys.path fix so `python cli.py` works when run from
     # inside the `device_discover/` folder.
     from device_discover.scanner import ScannerConfig, run_scan_to_file
     from device_discover.networking import get_default_local_subnet, normalize_subnet_input
@@ -129,9 +130,7 @@ def main() -> None:
         on_event=on_event,
     )
 
-    # Step 4 — print summary (re-open inventory we just wrote)
-    import json
-
+    # Print summary (re-open inventory we just wrote)
     with open(output_path, "r") as f:
         inventory = json.load(f)
 

@@ -21,19 +21,19 @@ pip install -r requirements.txt
 
 ```bash
 source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8008
 ```
 
 ### Production-style (no reload, just start)
 
 ```bash
-uvicorn app.main:app --port 8000
+uvicorn app.main:app --port 8008
 ```
 
 ### Bind to all interfaces (e.g. access from another device)
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8008
 ```
 
 ---
@@ -43,7 +43,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | Method | When |
 |--------|------|
 | **Ctrl+C** | Server is in the foreground |
-| **`kill <PID>`** | From another terminal: `lsof -nP -iTCP:8000 -sTCP:LISTEN` to get PID, then `kill <PID>` |
+| **`kill <PID>`** | From another terminal: `lsof -nP -iTCP:8008 -sTCP:LISTEN` to get PID, then `kill <PID>` |
 | **`kill -9 <PID>`** | Force kill if it doesn’t stop |
 
 ---
@@ -53,7 +53,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | Option | Meaning |
 |--------|---------|
 | `--reload` | Watch for file changes and restart (dev only) |
-| `--port 8000` | Port to listen on |
+| `--port 8008` | Port to listen on |
 | `--host 0.0.0.0` | Listen on all interfaces (default: 127.0.0.1) |
 
 Omit `--reload` if you want a simple start without auto-restart.

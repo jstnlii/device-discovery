@@ -21,7 +21,7 @@ npm run dev -- --port 5173
 
 Then open **http://localhost:5173**.
 
-**Requires the backend** to be running on port 8000. The Vite dev server proxies `/api` requests to `http://localhost:8000`.
+**Requires the backend** to be running on port 8008. The Vite dev server proxies `/api` requests to `http://localhost:8008`.
 
 ---
 
@@ -51,7 +51,7 @@ Output goes to `dist/`. Serve with any static file server, or run `npm run previ
 The dev server proxies `/api` to the backend. Ensure `vite.config.ts` has:
 
 ```ts
-proxy: { "/api": { target: "http://localhost:8000", changeOrigin: true } }
+proxy: { "/api": { target: "http://localhost:8008", changeOrigin: true } }
 ```
 
 If the backend runs on a different port, update the `target` accordingly.
