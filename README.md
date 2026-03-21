@@ -4,9 +4,9 @@ Network asset discovery tool: discovers live hosts on a subnet, enriches them wi
 
 **Two ways to use it:**
 
-| Mode | Description |
-|------|-------------|
-| **CLI** | Run `devicefinder.py` from the terminal. Writes `inventory_*.json` to disk. |
+| Mode       | Description                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| **CLI**    | Run `devicefinder.py` from the terminal. Writes `inventory_*.json` to disk.               |
 | **Web UI** | React frontend + FastAPI backend. Start a scan from the browser, view results in a table. |
 
 ---

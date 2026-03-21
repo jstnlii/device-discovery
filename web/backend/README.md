@@ -67,5 +67,8 @@ Omit `--reload` if you want a simple start without auto-restart.
 | `ALLOWED_ORIGINS` | `*` | CORS allowed origins (comma-separated) |
 | `SCANS_DIR` | `./data/scans` | Directory for scan data |
 | `MAX_SCAN_HOSTS` | `1024` | Max hosts per scan (safety cap) |
+| `DEVICE_DISCOVER_MANUF_PATH` | *(unset)* | Optional path to a Wireshark-format `manuf` OUI file. If unset, the copy bundled with the `manuf` PyPI package is used (offline). |
 
 Scan data is stored as `data/scans/<scan_id>/inventory.json` and `status.json`.
+
+Vendor names come from the Wireshark OUI database loaded by [`manuf`](https://pypi.org/project/manuf/) (no network calls at lookup time). To refresh the database file, replace the file at `DEVICE_DISCOVER_MANUF_PATH` or upgrade the `manuf` package.

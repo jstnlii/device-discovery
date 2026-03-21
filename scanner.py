@@ -1,3 +1,4 @@
+import os
 import threading
 import ipaddress
 import platform
@@ -54,18 +55,41 @@ COMMON_PORTS: Dict[int, str] = {
 }
 
 
-# OUI prefix -> manufacturer mapping (first 3 bytes of MAC)
-OUI_TABLE: Dict[str, str] = {
-    "c4:50:9c": "Apple",
-    "ac:bc:32": "Apple",
-    "f0:b4:29": "Apple",
-    "3c:95:09": "Samsung",
+# Optional overrides when the Wireshark DB has no match (first 3 octets, lower case, `:` separators).
+MANUFACTURER_OVERRIDES: Dict[str, str] = {
+    "c4:50:9c": "Apple, Inc.",
+    "ac:bc:32": "Apple, Inc.",
+    "f0:b4:29": "Apple, Inc.",
+    "3c:95:09": "Samsung Electronics Co.,Ltd",
     "00:80:92": "Nortel Networks",
-    "4e:8e:66": "unknown",
-    "76:cd:f3": "unknown",
-    "82:32:4b": "Apple",
-    "26:13:4a": "unknown",
+    "82:32:4b": "Apple, Inc.",
 }
+
+_manuf_lock = threading.Lock()
+_manuf_parser: Optional[Any] = None
+_manuf_load_attempted = False
+
+
+def _get_wireshark_manuf_parser() -> Optional[Any]:
+    """
+    Lazy-load Wireshark's OUI database via the `manuf` package (bundled data file, offline).
+    Returns None if `manuf` is missing or the database cannot be loaded.
+    """
+    global _manuf_parser, _manuf_load_attempted
+    if _manuf_load_attempted:
+        return _manuf_parser
+    with _manuf_lock:
+        if _manuf_load_attempted:
+            return _manuf_parser
+        _manuf_load_attempted = True
+        try:
+            from manuf import MacParser
+
+            path = os.environ.get("DEVICE_DISCOVER_MANUF_PATH", "").strip()
+            _manuf_parser = MacParser(manuf_name=path) if path else MacParser()
+        except Exception:
+            _manuf_parser = None
+        return _manuf_parser
 
 
 def _is_windows() -> bool:
@@ -222,13 +246,26 @@ def get_mac(ip: str, config: ScannerConfig, cancel_event: Optional[threading.Eve
 
 
 def get_manufacturer(mac: str) -> str:
-    """Look up manufacturer from MAC OUI prefix."""
+    """Resolve vendor from MAC: Wireshark OUI database (offline), then optional overrides."""
     if mac == "unknown":
         return "unknown"
 
-    # `mac` is expected to include `:` separators like `c4:50:9c:...`
-    prefix = mac[:8].lower()
-    return OUI_TABLE.get(prefix, "unknown")
+    # Normalize: ARP on Windows often uses `-`; `manuf` accepts `:` / `-` / `.`
+    mac_norm = mac.lower().replace("-", ":")
+
+    parser = _get_wireshark_manuf_parser()
+    if parser is not None:
+        try:
+            v = parser.get_all(mac_norm)
+            if v.manuf_long:
+                return v.manuf_long
+            if v.manuf:
+                return v.manuf
+        except ValueError:
+            pass
+
+    prefix = mac_norm[:8]
+    return MANUFACTURER_OVERRIDES.get(prefix, "unknown")
 
 
 def scan_host(
