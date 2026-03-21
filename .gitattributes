@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# GitHub Linguist: clarify language stats, reduce "Other"
+# Exclude generated/lock files from language breakdown
+package-lock.json linguist-generated=true
+**/package-lock.json linguist-generated=true
+
+# Exclude data files (not application code)
+data/*.json linguist-detectable=false
