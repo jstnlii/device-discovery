@@ -17,12 +17,19 @@ After cloning, `cd` into the repo directory.
 
 ### CLI (no server needed)
 
+By default, auto-detects your local subnet — no arguments needed:
+
 ```bash
-python3 cli.py --subnet 172.22.172.92
+python3 cli.py
 ```
 
-- Subnet can be **CIDR** (`172.22.172.0/24`) or **plain IP** (`172.22.172.92`) — auto-resolves using your local network.
-- Omit `--subnet` to auto-detect your local subnet.
+Optionally specify a subnet with `--subnet` (e.g. to scan a different network, or when auto-detect picks the wrong interface):
+
+```bash
+python3 cli.py --subnet 172.22.172.0/24
+python3 cli.py --subnet 172.22.172.92    # plain IP, resolved via your local networks
+```
+
 - Use `--skip-ping-sweep` if ICMP is blocked on your network.
 - Run `python3 cli.py --help` for all options.
 
