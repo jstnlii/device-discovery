@@ -6,8 +6,10 @@ FastAPI backend for the Device Discovery web UI. Handles scan start/cancel, prog
 
 ## Setup (first time)
 
+From the repo root:
+
 ```bash
-cd device_discover/web/backend
+cd web/backend
 python3 -m venv .venv
 source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -19,8 +21,9 @@ pip install -r requirements.txt
 
 ### Development (auto-reload on file changes)
 
+From `web/backend/` (with venv activated):
+
 ```bash
-source .venv/bin/activate
 uvicorn app.main:app --reload --port 8008
 ```
 

@@ -6,14 +6,18 @@ React + TypeScript + Vite UI for Device Discovery. Lets you start scans, see pro
 
 ## Setup (first time)
 
+From the repo root:
+
 ```bash
-cd device_discover/web/frontend
+cd web/frontend
 npm install
 ```
 
 ---
 
 ## Run (development)
+
+From `web/frontend/`:
 
 ```bash
 npm run dev -- --port 5173

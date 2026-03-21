@@ -6,25 +6,23 @@ Network asset discovery tool: discovers live hosts on a subnet, enriches them wi
 
 | Mode       | Description                                                                               |
 | ---------- | ----------------------------------------------------------------------------------------- |
-| **CLI**    | Run `cli.py` or `python -m device_discover`. Writes `inventory_*.json` to disk.           |
+| **CLI**    | Run `python3 cli.py`. Writes `inventory_*.json` to disk.                                  |
 | **Web UI** | React frontend + FastAPI backend. Start a scan from the browser, view results in a table. |
 
 ---
 
 ## Quick start
 
+After cloning, `cd` into the repo directory.
+
 ### CLI (no server needed)
 
 ```bash
-# From device_discover/ folder:
-cd device_discover
 python3 cli.py --subnet 172.22.172.92
-
-# Or from repo root (parent of device_discover):
-python3 -m device_discover --subnet 172.22.172.92
 ```
 
 - Subnet can be **CIDR** (`172.22.172.0/24`) or **plain IP** (`172.22.172.92`) — auto-resolves using your local network.
+- Omit `--subnet` to auto-detect your local subnet.
 - Use `--skip-ping-sweep` if ICMP is blocked on your network.
 - Run `python3 cli.py --help` for all options.
 
@@ -32,14 +30,16 @@ python3 -m device_discover --subnet 172.22.172.92
 
 **Terminal 1 — Backend**
 ```bash
-cd device_discover/web/backend
-source .venv/bin/activate
+cd web/backend
+python3 -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8008
 ```
 
 **Terminal 2 — Frontend**
 ```bash
-cd device_discover/web/frontend
+cd web/frontend
 npm install
 npm run dev -- --port 5173
 ```
