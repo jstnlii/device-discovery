@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
+import textwrap
+
 from networking import get_default_local_subnet, normalize_subnet_input
 from scanner import ScannerConfig, run_scan_to_file
 
@@ -39,6 +41,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Validate/normalize subnet input and exit without scanning.",
     )
     return p
+
+
+# Terminal width for wrapping long port/service lines
+_TERM_WIDTH = 76
+
+
+def _print_port_line(port: int | str, service: str, *, prefix: str = "", indent: str = "") -> None:
+    """Print a port line, wrapping long service names with proper indent."""
+    first_part = f"{prefix}{port}: "
+    line = f"{first_part}{service}"
+    if len(line) <= _TERM_WIDTH:
+        print(line)
+        return
+    width = min(_TERM_WIDTH - len(first_part), _TERM_WIDTH - len(indent))
+    wrapped = textwrap.wrap(service, width=max(20, width))
+    print(f"{first_part}{wrapped[0]}")
+    for rest in wrapped[1:]:
+        print(f"{indent}{rest}")
 
 
 def main() -> None:
@@ -103,7 +123,12 @@ def main() -> None:
 
             print(f"    Hostname:     {hostname}")
             print(f"    MAC:          {mac} ({manufacturer})")
-            print(f"    Open ports:   {open_ports if open_ports else 'none found'}")
+            if open_ports:
+                print("    Open ports:")
+                for port, service in open_ports.items():
+                    _print_port_line(port, service, prefix="      → ", indent="          ")
+            else:
+                print("    Open ports:   none found")
 
     start_time = datetime.now()
     run_scan_to_file(
@@ -125,7 +150,7 @@ def main() -> None:
         print(f"  MAC: {device['mac']} — {device['manufacturer']}")
         if device["open_ports"]:
             for port, service in device["open_ports"].items():
-                print(f"    → Port {port}: {service}")
+                _print_port_line(port, service, prefix="    → Port ", indent="         ")
         else:
             print(f"    → No common ports open")
 

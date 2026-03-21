@@ -523,7 +523,11 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                             <div className="chips">
                               {Object.entries(d.open_ports).map(
                                 ([port, service]) => (
-                                  <span key={port} className="chip">
+                                  <span
+                                    key={port}
+                                    className="chip"
+                                    title={`${port} / ${service}`}
+                                  >
                                     <span className="chip-port">{port}</span>
                                     <span className="chip-sep">/</span>
                                     <span className="chip-svc">{service}</span>

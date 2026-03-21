@@ -940,16 +940,23 @@
   padding: 4px 10px;
   background: var(--accent-muted);
   font-size: 12px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .chip-port {
   font-family: var(--mono);
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .chip-svc {
   font-size: 13px;
   opacity: 0.9;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip-sep {
