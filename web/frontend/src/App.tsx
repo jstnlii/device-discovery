@@ -450,9 +450,9 @@ function App() {
               </span>
             </label>
             <div className="hint-tooltip" role="tooltip">
-              {`When unchecked, the scan sends a broadcast signal to all devices on the network (called a "ping sweep") to see which devices respond, then only checks those for efficiency.
+              {`If unchecked, the scan sends a broadcast signal to all devices on the network (called a "ping sweep" or "ICMP sweep") to see which devices respond, then only checks those for efficiency.
 
-If your network blocks pings (common on work or school networks), or if the scan isn't finding devices you expect, check this box. The scan will iteratively try every address instead. It takes longer but works when ping is blocked.`}
+If checked, the scan will iteratively scan every address instead. Some networks block sweeps (common on work or school networks).`}
             </div>
           </div>
 
