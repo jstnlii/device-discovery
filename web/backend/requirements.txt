@@ -1,4 +1,6 @@
 fastapi
 uvicorn[standard]
 pydantic
+manuf>=1.1.5
+zeroconf>=0.131.0
 

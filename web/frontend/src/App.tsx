@@ -382,7 +382,7 @@ function App() {
         <div className="brand">
           <h1 className="brand-title">Device Discovery</h1>
           <p className="brand-subtitle">
-            Start a scan and view clean inventory results.
+            Scan your network and discover connected devices
           </p>
         </div>
       </header>
@@ -411,7 +411,7 @@ function App() {
             <div className="detect-card">
               <div className="detect-card-body">
                 <div className="detect-card-main">
-                  <span className="detect-label">Detected network:</span>
+                  <span className="detect-label">Auto-detected network</span>
                   <span className="detect-cidr mono">
                     {localNetwork.detected.cidr}
                   </span>
@@ -450,9 +450,9 @@ function App() {
               </span>
             </label>
             <div className="hint-tooltip" role="tooltip">
-              {`When unchecked, the scan sends a broadcast signal to all devices on the network (called a "ping sweep") to see which devices respond, then only checks those for efficiency.
+              {`If unchecked, the scan sends a broadcast signal to all devices on the network (called a "ping sweep" or "ICMP sweep") to see which devices respond, then only checks those for efficiency.
 
-If your network blocks pings (common on work or school networks), or if the scan isn't finding devices you expect, check this box. The scan will iteratively try every address instead. It takes longer but works when ping is blocked.`}
+If checked, the scan will iteratively scan every address instead. Some networks block sweeps (common on work or school networks).`}
             </div>
           </div>
 
