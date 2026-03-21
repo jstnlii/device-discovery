@@ -115,97 +115,12 @@ function App() {
     stopPolling();
 
     try {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "8721f5",
-          },
-          body: JSON.stringify({
-            sessionId: "8721f5",
-            runId: "iter4",
-            hypothesisId: "H6_fetch_hang",
-            location: "App.tsx:startNewScan",
-            message: "before_await_startScan",
-            data: { subnet, skipPingSweep },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       const started = await startScan(subnet, skipPingSweep);
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "8721f5",
-          },
-          body: JSON.stringify({
-            sessionId: "8721f5",
-            runId: "baseline",
-            hypothesisId: "H2",
-            location: "App.tsx:startNewScan",
-            message: "start_scan_response",
-            data: { scanId: started.scan_id, subnet, skipPingSweep },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       setScanId(started.scan_id);
       setStatus(null);
       setInventory(null);
 
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "8721f5",
-          },
-          body: JSON.stringify({
-            sessionId: "8721f5",
-            runId: "baseline",
-            hypothesisId: "H1_or_H2",
-            location: "App.tsx:startNewScan",
-            message: "before_refreshHistory",
-            data: { scanId: started.scan_id },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       await refreshHistory();
-      // `useEffect([scanId])` will fetch + poll as needed.
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "8721f5",
-          },
-          body: JSON.stringify({
-            sessionId: "8721f5",
-            runId: "baseline",
-            hypothesisId: "H1_or_H2",
-            location: "App.tsx:startNewScan",
-            message: "after_refreshHistory",
-            data: { scanId: started.scan_id },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -238,24 +153,6 @@ function App() {
   useEffect(() => {
     // If user selects a previous scan, fetch it once (and don't poll unless it is actively running).
     if (!scanId) return;
-    // #region agent log
-    fetch("http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "8721f5",
-      },
-      body: JSON.stringify({
-        sessionId: "8721f5",
-        runId: "baseline",
-        hypothesisId: "H2",
-        location: "App.tsx:useEffect(scanId)",
-        message: "scan_id_effect_triggered",
-        data: { scanId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     stopPolling();
     (async () => {
       const state = await refreshScan(scanId);
@@ -272,28 +169,6 @@ function App() {
 
   useEffect(() => {
     if (!status) return;
-    // #region agent log
-    fetch("http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "8721f5",
-      },
-      body: JSON.stringify({
-        sessionId: "8721f5",
-        runId: "baseline",
-        hypothesisId: "H3",
-        location: "App.tsx:useEffect(status)",
-        message: "status_state_changed",
-        data: {
-          scanId,
-          statusState: status.state,
-          progressMessage: status.progress.message ?? null,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (
       status.state === "completed" ||
       status.state === "failed" ||
@@ -349,24 +224,6 @@ function App() {
     if (!scanId) return;
     setError(null);
     setCancelling(true);
-    // #region agent log
-    fetch("http://127.0.0.1:7400/ingest/f8ffa4c1-03c2-4355-86d2-96a8f91d6d86", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "8721f5",
-      },
-      body: JSON.stringify({
-        sessionId: "8721f5",
-        runId: "baseline",
-        hypothesisId: "H4",
-        location: "App.tsx:cancelCurrentScan",
-        message: "cancel_clicked",
-        data: { scanId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     try {
       await cancelScan(scanId);
     } catch (e) {
