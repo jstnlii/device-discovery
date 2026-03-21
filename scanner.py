@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 import ipaddress
@@ -5,6 +6,7 @@ import platform
 import re
 import socket
 import subprocess
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
@@ -34,6 +36,7 @@ class ScanResult:
     cancelled: bool
 
 
+# Fallback when ports.json is missing or unreadable.
 COMMON_PORTS: Dict[int, str] = {
     21: "FTP",
     22: "SSH",
@@ -53,6 +56,30 @@ COMMON_PORTS: Dict[int, str] = {
     8080: "HTTP-Alt",
     8443: "HTTPS-Alt",
 }
+
+_ports_lock = threading.Lock()
+_ports_cache: Optional[Dict[int, str]] = None
+
+
+def _load_ports() -> Dict[int, str]:
+    """Load port list from data/ports.json, fallback to COMMON_PORTS."""
+    global _ports_cache
+    if _ports_cache is not None:
+        return _ports_cache
+    with _ports_lock:
+        if _ports_cache is not None:
+            return _ports_cache
+        try:
+            path = Path(__file__).resolve().parent / "data" / "ports.json"
+            if path.exists():
+                with open(path, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _ports_cache = {int(k): str(v) for k, v in raw.items()}
+            else:
+                _ports_cache = dict(COMMON_PORTS)
+        except Exception:
+            _ports_cache = dict(COMMON_PORTS)
+        return _ports_cache
 
 
 # Optional overrides when the Wireshark DB has no match (first 3 octets, lower case, `:` separators).
@@ -163,6 +190,45 @@ def discover_hosts(
     return sorted(live_hosts)
 
 
+def _grab_ssh_banner(ip: str, timeout: float) -> Optional[str]:
+    """Read SSH banner (e.g. SSH-2.0-OpenSSH_8.2) and return enhanced label."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((ip, 22))
+        data = sock.recv(256).decode("utf-8", errors="ignore").strip()
+        sock.close()
+        if not data:
+            return None
+        # SSH-2.0-OpenSSH_8.2 or SSH-1.99-dropbear_2022.83
+        m = re.match(r"SSH-[0-9.]+-(.+)", data, re.IGNORECASE)
+        if m:
+            return f"SSH ({m.group(1).strip()})"
+        return "SSH"
+    except Exception:
+        return None
+
+
+def _grab_http_server(ip: str, timeout: float) -> Optional[str]:
+    """Send HTTP request, parse Server header, return enhanced label."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((ip, 80))
+        sock.sendall(b"HEAD / HTTP/1.0\r\nHost: " + ip.encode() + b"\r\n\r\n")
+        data = sock.recv(2048).decode("utf-8", errors="ignore")
+        sock.close()
+        for line in data.split("\n"):
+            if line.lower().startswith("server:"):
+                server = line.split(":", 1)[1].strip()
+                if server:
+                    return f"HTTP ({server})"
+                break
+        return "HTTP"
+    except Exception:
+        return None
+
+
 def scan_port(
     ip: str,
     port: int,
@@ -188,19 +254,31 @@ def scan_port(
 def scan_ports(ip: str, config: ScannerConfig, cancel_event: Optional[threading.Event] = None) -> Dict[int, str]:
     """
     Scan all common ports on a host, return dict of open ports (port -> service).
+    Uses data/ports.json (top ~100), with banner grabs for SSH (22) and HTTP (80).
     """
+    ports = _load_ports()
     open_ports: Dict[int, str] = {}
 
     with ThreadPoolExecutor(max_workers=config.max_threads) as executor:
         futures = {
-            executor.submit(scan_port, ip, port, config, cancel_event): port for port in COMMON_PORTS
+            executor.submit(scan_port, ip, port, config, cancel_event): port for port in ports
         }
         for future in as_completed(futures):
             if _cancelled(cancel_event):
                 break
             port = futures[future]
             if future.result() is not None:
-                open_ports[port] = COMMON_PORTS[port]
+                open_ports[port] = ports[port]
+
+    # Banner grabs for richer labels on high-value ports
+    if 22 in open_ports and not _cancelled(cancel_event):
+        banner = _grab_ssh_banner(ip, config.port_scan_timeout)
+        if banner:
+            open_ports[22] = banner
+    if 80 in open_ports and not _cancelled(cancel_event):
+        server = _grab_http_server(ip, config.port_scan_timeout)
+        if server:
+            open_ports[80] = server
 
     return open_ports
 
