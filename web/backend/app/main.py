@@ -9,14 +9,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 def _find_project_root() -> Path:
-    """Find directory containing the device_discover package (for sys.path)."""
+    """Find repo root (directory containing scanner.py) for sys.path."""
     p = Path(__file__).resolve()
-    for _ in range(8):  # safety limit
+    for _ in range(8):
         p = p.parent
-        if (p / "device_discover" / "__init__.py").exists():
+        if (p / "scanner.py").exists():
             return p
-    # Fallback: assume standard layout (main.py is at web/backend/app/)
-    return Path(__file__).resolve().parents[4]
+    return Path(__file__).resolve().parents[3]
 
 
 REPO_ROOT = _find_project_root()
@@ -26,7 +25,7 @@ if str(REPO_ROOT) not in sys.path:
 from .models import GetScanResponse, ScanSummary, StartScanRequest, StartScanResponse
 from .scans_store import ScansStore
 from .scan_manager import ScanManager
-from device_discover.networking import get_default_local_subnet, get_local_ipv4_interfaces
+from networking import get_default_local_subnet, get_local_ipv4_interfaces
 
 
 def _default_scans_dir() -> Path:

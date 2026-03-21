@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from device_discover.networking import normalize_subnet_input
+from networking import normalize_subnet_input
 
 
 ScanState = Literal["queued", "running", "completed", "failed", "cancelled"]

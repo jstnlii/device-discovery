@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
+
+from networking import get_default_local_subnet, normalize_subnet_input
+from scanner import ScannerConfig, run_scan_to_file
 
 # ─────────────────────────────────────────
 # DEFAULTS (can be overridden via CLI)
@@ -13,18 +15,6 @@ from typing import Any, Dict
 PORT_SCAN_TIMEOUT = 0.5  # seconds per port
 PING_TIMEOUT = 1  # seconds per ping
 MAX_THREADS = 50  # concurrent threads
-
-
-def _ensure_import_path() -> None:
-    """
-    When running `python cli.py` from within the `device_discover/` folder,
-    Python's sys.path points at that folder and the `device_discover` package import
-    can fail. This adds the parent directory so the package is importable.
-    """
-    repo_root = Path(__file__).resolve().parent.parent
-    repo_root_str = str(repo_root)
-    if repo_root_str not in sys.path:
-        sys.path.insert(0, repo_root_str)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -52,13 +42,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    _ensure_import_path()
-
-    # Import after sys.path fix so `python cli.py` works when run from
-    # inside the `device_discover/` folder.
-    from device_discover.scanner import ScannerConfig, run_scan_to_file
-    from device_discover.networking import get_default_local_subnet, normalize_subnet_input
-
     parser = _build_parser()
     args = parser.parse_args()
 

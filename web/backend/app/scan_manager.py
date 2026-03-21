@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
-from device_discover.scanner import ScannerConfig, run_scan
+from scanner import ScannerConfig, run_scan
 
 from .models import ScanState, ScanStatus
 from .scans_store import ScansStore, _utc_now_iso
