@@ -71,4 +71,4 @@ Omit `--reload` if you want a simple start without auto-restart.
 
 Scan data is stored as `data/scans/<scan_id>/inventory.json` and `status.json`.
 
-Vendor names come from the Wireshark OUI database loaded by [`manuf`](https://pypi.org/project/manuf/) (no network calls at lookup time). To refresh the database file, replace the file at `DEVICE_DISCOVER_MANUF_PATH` or upgrade the `manuf` package.
+Vendor names come from the Wireshark OUI database loaded by [`manuf`](https://pypi.org/project/manuf/) (no network calls at lookup time). Hostnames use reverse DNS first, then fall back to mDNS (Bonjour) via [`zeroconf`](https://pypi.org/project/zeroconf/) when reverse DNS returns nothing—common on home networks.
