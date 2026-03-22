@@ -20,10 +20,10 @@ npm install
 From `web/frontend/`:
 
 ```bash
-npm run dev -- --port 5173
+npm run dev
 ```
 
-Then open **http://localhost:5173**.
+Then open **http://localhost:5173** (Vite’s default port).
 
 **Requires the backend** to be running on port 8008. The Vite dev server proxies `/api` requests to `http://localhost:8008`.
 

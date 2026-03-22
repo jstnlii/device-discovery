@@ -2,6 +2,8 @@
 
 Network asset discovery tool: discovers live hosts on a subnet, enriches them with hostname, MAC, manufacturer, and open ports, then outputs a JSON inventory.
 
+A bootleg nmap, if you will.
+
 **Two ways to use it:**
 
 | Mode       | Description                                                                               |
@@ -63,9 +65,9 @@ device_discover/
 ├── __main__.py           # Enables `python -m device_discover`
 ├── scanner.py            # Core scanning logic (ping sweep, port scan, etc.)
 ├── networking.py         # Subnet detection, CIDR normalization
-├── web/
-│   ├── backend/          # FastAPI API + scan orchestration
-│   └── frontend/         # React + Vite UI
+└── web/
+    ├── backend/          # FastAPI API + scan orchestration
+    └── frontend/         # React + Vite UI
 ```
 
 - **scanner.py** — Used by both CLI and web backend.

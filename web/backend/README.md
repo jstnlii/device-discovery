@@ -19,24 +19,8 @@ pip install -r requirements.txt
 
 ## Run the server
 
-### Development (auto-reload on file changes)
-
-From `web/backend/` (with venv activated):
-
-```bash
-uvicorn app.main:app --reload --port 8008
-```
-
-### Production-style (no reload, just start)
-
 ```bash
 uvicorn app.main:app --port 8008
-```
-
-### Bind to all interfaces (e.g. access from another device)
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8008
 ```
 
 ---
