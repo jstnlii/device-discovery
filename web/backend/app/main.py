@@ -25,7 +25,7 @@ if str(REPO_ROOT) not in sys.path:
 from .models import GetScanResponse, ScanSummary, StartScanRequest, StartScanResponse
 from .scans_store import ScansStore
 from .scan_manager import ScanManager
-from networking import get_default_local_subnet, get_local_ipv4_interfaces
+from networking import get_default_gateway, get_default_local_subnet, get_local_ipv4_interfaces
 
 
 def _default_scans_dir() -> Path:
@@ -85,11 +85,13 @@ def create_app() -> FastAPI:
 
         inventory_payload = store.get_inventory(scan_id)
         inventory = None
+        default_gateway = get_default_gateway()
         if inventory_payload and status.state in ("completed", "cancelled"):
             # Keep shape consistent with CLI output JSON.
             inventory = {
                 "scan_metadata": inventory_payload.get("scan_metadata", {}),
                 "devices": inventory_payload.get("devices", []),
+                "default_gateway": default_gateway,
             }
 
         return GetScanResponse(scan=status, inventory=inventory)
@@ -98,6 +100,7 @@ def create_app() -> FastAPI:
     def get_local_network() -> Dict[str, Any]:
         detected = get_default_local_subnet()
         interfaces = get_local_ipv4_interfaces()
+        gateway = get_default_gateway()
         return {
             "detected": None
             if not detected
@@ -116,6 +119,7 @@ def create_app() -> FastAPI:
                 }
                 for i in interfaces
             ],
+            "default_gateway": gateway,
         }
 
     @app.delete("/api/scans")

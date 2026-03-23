@@ -352,8 +352,31 @@ def _collect_mdns_hostnames(
     return result
 
 
+def _query_netbios_name(ip: str, timeout: float = 2.0) -> Optional[str]:
+    """
+    Query NetBIOS Name Service (NBNS) for hostname at given IP.
+    Returns name if found, None on failure or if pysmb unavailable.
+    Works on LAN without WINS (broadcast query).
+    """
+    try:
+        from nmb.NetBIOS import NetBIOS
+
+        nb = NetBIOS()
+        try:
+            names = nb.queryIPForName(ip, port=137, timeout=timeout)
+            if names and len(names) > 0:
+                name = names[0].strip()
+                if name and name != ip:
+                    return name
+        finally:
+            nb.close()
+    except Exception:
+        pass
+    return None
+
+
 def get_hostname(ip: str, mdns_map: Optional[Dict[str, str]] = None) -> str:
-    """Resolve hostname: reverse DNS first (2s timeout), then mDNS fallback."""
+    """Resolve hostname: reverse DNS first (2s timeout), then mDNS, then NetBIOS fallback."""
     result: List[Optional[str]] = [None]
 
     def _reverse_dns() -> None:
@@ -370,6 +393,9 @@ def get_hostname(ip: str, mdns_map: Optional[Dict[str, str]] = None) -> str:
         return name
     if mdns_map and ip in mdns_map:
         return mdns_map[ip]
+    nb_name = _query_netbios_name(ip, timeout=2.0)
+    if nb_name:
+        return nb_name
     return "unknown"
 
 

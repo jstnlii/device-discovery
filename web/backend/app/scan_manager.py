@@ -185,4 +185,3 @@ class ScanManager:
         finally:
             with self._cancel_lock:
                 self._cancel_events.pop(scan_id, None)
-
