@@ -879,17 +879,44 @@
 
 .network-map {
   margin-top: 12px;
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   background: var(--bg-elevated);
 }
 
-.network-map-container {
+.network-map-viewport {
   position: relative;
+  width: 100%;
   aspect-ratio: 1;
-  max-height: 420px;
-  min-height: 280px;
+  min-height: 320px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.network-map-viewport:active {
+  cursor: grabbing;
+}
+
+.network-map-pan-zoom {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.network-map-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .network-map-svg {
@@ -899,14 +926,123 @@
   height: 100%;
 }
 
-.network-map-nodes {
+.network-map-edge {
+  stroke: var(--border);
+  stroke-width: 0.5;
+  stroke-opacity: 0.5;
+  fill: none;
+}
+
+.network-map-bubble {
   position: absolute;
-  inset: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
+  padding: 0;
+  overflow: visible;
   pointer-events: none;
 }
 
-.network-map-nodes > * {
+.network-map-bubble > * {
   pointer-events: auto;
+}
+
+.network-map-bubble-label {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.network-map-bubble-devices {
+  position: absolute;
+  inset: 0;
+  top: 0px;
+  pointer-events: none;
+}
+
+.network-map-bubble-devices > * {
+  pointer-events: auto;
+}
+
+.network-map-bubble-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Smaller nodes inside zone bubbles */
+.network-map-bubble .network-map-node {
+  padding: 4px 8px;
+  font-size: 11px;
+  max-width: 90px;
+}
+
+.network-map-bubble .network-map-node-icon {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.network-map-bubble .network-map-node-ip {
+  font-size: 10px;
+}
+
+.network-map-center {
+  padding: 10px 14px;
+}
+
+.network-map-legend {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.network-map-legend-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.network-map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.network-map-legend-icon {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.network-map-legend-label {
+  opacity: 0.85;
+}
+
+.network-map-hint {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.6;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
 }
 
 .network-map-node {
@@ -925,6 +1061,7 @@
   max-width: 120px;
 }
 
+.network-map-node.network-map-center,
 .network-map-node.center {
   background: var(--accent);
   color: var(--bg);
