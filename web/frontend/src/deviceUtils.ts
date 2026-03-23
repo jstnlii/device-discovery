@@ -87,6 +87,7 @@ export function inferDeviceType(
 ): DeviceType {
   const ports = new Set(Object.keys(device.open_ports).map(Number))
   const has = (...p: number[]) => p.some((port) => ports.has(port))
+  const mfr = (device.manufacturer || '').toLowerCase()
 
   if (defaultGateway && device.ip === defaultGateway) {
     return 'router'
@@ -106,18 +107,26 @@ export function inferDeviceType(
     return 'printer'
   }
 
+  // Computer: SSH, RDP, Windows file sharing, or Mac (AFP/VNC/AirPlay) — check before NAS
+  if (has(22) || (has(135) && has(445)) || has(3389)) {
+    return 'computer'
+  }
+  // Mac / computer: AFP, VNC, or Apple/Mac hostname + file-sharing ports
+  if (has(548) || has(5900)) {
+    return 'computer' // AFP or VNC = almost always a computer
+  }
+  const host = (device.hostname || '').toLowerCase()
+  const looksLikeMac = mfr.includes('apple') || /macbook|imac|mac\s*mini|mac\s*pro/.test(host)
+  if (looksLikeMac && (has(445) || has(5000) || has(2049))) {
+    return 'computer'
+  }
+
   // NAS: SMB + NFS, or Synology (5000), or NFS
   if ((has(445) && has(2049)) || has(5000) || has(2049)) {
     return 'nas'
   }
 
-  // Computer: SSH, or Windows (135+445), or RDP
-  if (has(22) || (has(135) && has(445)) || has(3389)) {
-    return 'computer'
-  }
-
   // IoT / smart device: few ports, common IoT manufacturers
-  const mfr = (device.manufacturer || '').toLowerCase()
   const iotHints = ['google', 'sonos', 'philips', 'hue', 'apple', 'amazon', 'samsung', 'roku', 'chromecast']
   if (iotHints.some((h) => mfr.includes(h)) && (has(80) || has(443) || has(5353))) {
     return 'iot'

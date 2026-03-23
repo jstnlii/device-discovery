@@ -199,10 +199,9 @@ function App() {
       try {
         const local = await getLocalNetwork();
         setLocalNetwork(local);
-        if (local.detected?.cidr) {
-          setSubnet(local.detected.cidr);
-        } else {
-          setSubnet("10.0.0.0/24");
+        // Leave input blank on startup so user can press "Use" for auto-detected IP
+        if (!local.detected?.cidr) {
+          setSubnet("10.0.0.0/24"); // fallback when detection fails
         }
       } catch {
         setSubnet("10.0.0.0/24");
@@ -438,7 +437,7 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                 <button
                   key={s.scan_id}
                   className={`history-item ${scanId === s.scan_id ? "active" : ""}`}
-                  onClick={() => setScanId(s.scan_id)}
+                  onClick={() => setScanId(scanId === s.scan_id ? null : s.scan_id)}
                 >
                   <div className="history-item-top">
                     <span className="history-id">{s.scan_id.slice(0, 8)}</span>
