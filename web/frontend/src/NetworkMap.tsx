@@ -142,6 +142,7 @@ function deviceTooltip(d: Device): string {
 }
 
 const BEND_OFFSET = 16; // horizontal distance from center before vertical segment (for top/bottom boxes)
+const PAN_PADDING = 80; // min pixels of map visible from each edge; limits how far you can pan
 
 function edgePath(
   cx: number,
@@ -184,12 +185,49 @@ export function NetworkMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
+  const zoomPanRef = useRef({ zoom: 0.9, pan: { x: 0, y: 0 } });
+  zoomPanRef.current = { zoom, pan };
 
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.08 : 0.08;
-    setZoom((z) => Math.max(0.3, Math.min(1.5, z + delta)));
-  }, []);
+  const clampPan = useCallback(
+    (p: { x: number; y: number }, z: number) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return p;
+      const maxX = Math.max(0, (rect.width * (1 + z)) / 2 - PAN_PADDING);
+      const maxY = Math.max(0, (rect.height * (1 + z)) / 2 - PAN_PADDING);
+      return {
+        x: Math.max(-maxX, Math.min(maxX, p.x)),
+        y: Math.max(-maxY, Math.min(maxY, p.y)),
+      };
+    },
+    []
+  );
+
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const mx = e.clientX - rect.left - cx;
+      const my = e.clientY - rect.top - cy;
+      const delta = e.deltaY > 0 ? -0.03 : 0.03;
+
+      const { zoom: z, pan: p } = zoomPanRef.current;
+      const newZoom = Math.max(0.3, Math.min(1.5, z + delta));
+      const scaleFactor = newZoom / z;
+      const newPan = clampPan(
+        {
+          x: mx - (mx - p.x) * scaleFactor,
+          y: my - (my - p.y) * scaleFactor,
+        },
+        newZoom
+      );
+      setPan(newPan);
+      setZoom(newZoom);
+    },
+    [clampPan]
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -204,13 +242,16 @@ export function NetworkMap({
     lastMouse.current = { x: e.clientX, y: e.clientY };
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isPanning.current) return;
-    const dx = e.clientX - lastMouse.current.x;
-    const dy = e.clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
-  }, []);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isPanning.current) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      setPan((p) => clampPan({ x: p.x + dx, y: p.y + dy }, zoom));
+    },
+    [clampPan, zoom]
+  );
 
   const handleMouseUp = useCallback(() => { isPanning.current = false; }, []);
   const handleMouseLeave = useCallback(() => { isPanning.current = false; }, []);

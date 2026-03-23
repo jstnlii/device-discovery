@@ -1004,9 +1004,9 @@
 
 .network-map-legend {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   right: 8px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--bg) 95%, transparent);
   border: 1px solid var(--border);
