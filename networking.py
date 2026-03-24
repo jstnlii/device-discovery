@@ -129,7 +129,7 @@ def get_default_gateway() -> Optional[str]:
                     if "default" in line.lower() or "0.0.0.0" in line:
                         parts = line.split()
                         for p in parts:
-                            if re.match(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", p):
+                            if re.match(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", p) and p != "0.0.0.0":
                                 return p
             except Exception:
                 pass

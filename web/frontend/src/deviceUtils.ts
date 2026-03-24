@@ -93,12 +93,8 @@ export function inferDeviceType(
     return 'router'
   }
 
-  // Router: DNS + DHCP, or DNS + HTTP, or HTTP + HTTPS
-  if (
-    (has(53) && has(67)) ||
-    (has(53) && has(80)) ||
-    (has(80) && has(443))
-  ) {
+  // Router: DNS + DHCP, or DNS + HTTP (gateway-like; avoid HTTP+HTTPS alone — too common)
+  if ((has(53) && has(67)) || (has(53) && has(80))) {
     return 'router'
   }
 
