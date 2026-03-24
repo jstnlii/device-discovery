@@ -58,6 +58,7 @@ class ScanSummary(BaseModel):
 class InventoryResponse(BaseModel):
     scan_metadata: Dict[str, Any]
     devices: List[Dict[str, Any]]
+    default_gateway: Optional[str] = None
 
 
 class GetScanResponse(BaseModel):

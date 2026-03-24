@@ -99,6 +99,89 @@ def get_default_local_subnet() -> Optional[LocalInterfaceIPv4]:
     return interfaces[0]
 
 
+def get_default_gateway() -> Optional[str]:
+    """
+    Return the default gateway IP address, or None if not found.
+    Works on macOS, Linux, and Windows.
+    """
+    import platform
+
+    system = platform.system().lower()
+
+    if system == "darwin":
+        try:
+            output = subprocess.check_output(
+                ["route", "-n", "get", "default"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+            match = re.search(r"gateway:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", output)
+            if match:
+                return match.group(1).strip()
+        except Exception:
+            try:
+                output = subprocess.check_output(
+                    ["netstat", "-rn"],
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                )
+                for line in output.splitlines():
+                    if "default" in line.lower() or "0.0.0.0" in line:
+                        parts = line.split()
+                        for p in parts:
+                            if re.match(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", p) and p != "0.0.0.0":
+                                return p
+            except Exception:
+                pass
+        return None
+
+    if system == "linux":
+        try:
+            with open("/proc/net/route", encoding="utf-8") as f:
+                for line in f:
+                    fields = line.strip().split()
+                    if len(fields) < 3:
+                        continue
+                    dest = fields[1]
+                    gateway = fields[2]
+                    flags = int(fields[3], 16) if len(fields) > 3 else 0
+                    if dest == "00000000" and (flags & 2):
+                        g = int(gateway, 16)
+                        return f"{(g & 0xFF)}.{(g >> 8) & 0xFF}.{(g >> 16) & 0xFF}.{(g >> 24) & 0xFF}"
+        except Exception:
+            pass
+        try:
+            output = subprocess.check_output(
+                ["ip", "route", "show", "default"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+            match = re.search(r"via\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", output)
+            if match:
+                return match.group(1).strip()
+        except Exception:
+            pass
+        return None
+
+    if system == "windows":
+        try:
+            output = subprocess.check_output(
+                ["route", "print", "0.0.0.0"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+                creationflags=0x08000000 if hasattr(subprocess, "CREATE_NO_WINDOW") else 0,
+            )
+            for line in output.splitlines():
+                match = re.search(r"0\.0\.0\.0\s+0\.0\.0\.0\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", line)
+                if match:
+                    return match.group(1).strip()
+        except Exception:
+            pass
+        return None
+
+    return None
+
+
 def _is_valid_netmask(mask_str: str) -> bool:
     """
     Returns True if `mask_str` is a valid dotted-quad netmask (contiguous 1s).

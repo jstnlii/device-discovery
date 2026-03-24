@@ -40,6 +40,7 @@ export type InventoryResponse = {
     open_ports: Record<string, string>
     scanned_at: string
   }>
+  default_gateway?: string | null
 }
 
 export type GetScanResponse = {
@@ -57,5 +58,6 @@ export type LocalSubnet = {
 export type LocalNetworkResponse = {
   detected: LocalSubnet | null
   interfaces: LocalSubnet[]
+  default_gateway?: string | null
 }
 

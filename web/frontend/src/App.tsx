@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
+import refreshIcon from "./assets/refreshicon.png";
 import {
   cancelScan,
   clearScanHistory,
@@ -8,6 +9,13 @@ import {
   getScans,
   startScan,
 } from "./api";
+import {
+  getChipTitle,
+  inferDeviceType,
+  type Device,
+  type DeviceType,
+} from "./deviceUtils";
+import { NetworkMap } from "./NetworkMap";
 import type { InventoryResponse, ScanSummary, ScanStatus } from "./types";
 import type { LocalNetworkResponse } from "./types";
 
@@ -72,6 +80,64 @@ function getProgressPercent(status: ScanStatus | null): number | null {
   return Math.max(0, Math.min(100, p));
 }
 
+const DEVICE_TYPE_LABELS: Record<DeviceType, string> = {
+  router: "Router",
+  computer: "Computer",
+  printer: "Printer",
+  nas: "NAS",
+  iot: "IoT / Smart",
+  other: "Other",
+};
+
+function Dashboard({
+  inventory,
+  defaultGateway,
+}: {
+  inventory: InventoryResponse;
+  defaultGateway: string | null;
+}) {
+  const meta = inventory.scan_metadata;
+  const devices = inventory.devices;
+
+  const typeCounts: Record<DeviceType, number> = {
+    router: 0,
+    computer: 0,
+    printer: 0,
+    nas: 0,
+    iot: 0,
+    other: 0,
+  };
+  for (const d of devices) {
+    const t = inferDeviceType(d as Device, defaultGateway);
+    typeCounts[t]++;
+  }
+  const typePills = (Object.entries(typeCounts) as [DeviceType, number][])
+    .filter(([, n]) => n > 0)
+    .map(([t, n]) => `${n} ${DEVICE_TYPE_LABELS[t]}${n !== 1 ? "s" : ""}`)
+    .join(" • ");
+
+  return (
+    <div className="dashboard">
+      <div className="dashboard-headline">
+        {meta.hosts_found} device{meta.hosts_found !== 1 ? "s" : ""} found
+        in {meta.duration_seconds}s
+      </div>
+      <div className="dashboard-stats">
+        <div className="dashboard-stat">
+          <span className="dashboard-stat-k">Subnet</span>
+          <span className="dashboard-stat-v mono">{meta.subnet}</span>
+        </div>
+        {typePills ? (
+          <div className="dashboard-stat">
+            <span className="dashboard-stat-k">By type</span>
+            <span className="dashboard-stat-v">{typePills}</span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [subnet, setSubnet] = useState("");
   const [skipPingSweep, setSkipPingSweep] = useState(false);
@@ -87,6 +153,7 @@ function App() {
     null,
   );
   const [detectingNetwork, setDetectingNetwork] = useState(true);
+  const [resultsView, setResultsView] = useState<"table" | "map">("table");
 
   const pollRef = useRef<number | null>(null);
 
@@ -133,10 +200,9 @@ function App() {
       try {
         const local = await getLocalNetwork();
         setLocalNetwork(local);
-        if (local.detected?.cidr) {
-          setSubnet(local.detected.cidr);
-        } else {
-          setSubnet("10.0.0.0/24");
+        // Leave input blank on startup so user can press "Use" for auto-detected IP
+        if (!local.detected?.cidr) {
+          setSubnet("10.0.0.0/24"); // fallback when detection fails
         }
       } catch {
         setSubnet("10.0.0.0/24");
@@ -321,17 +387,6 @@ If checked, the scan will iteratively scan every address instead. Some networks 
             >
               {starting ? "Starting..." : "Start Scan"}
             </button>
-            <button
-              className="btn"
-              onClick={() =>
-                refreshHistory().catch((e) =>
-                  setError(e instanceof Error ? e.message : String(e)),
-                )
-              }
-              disabled={starting}
-            >
-              Refresh History
-            </button>
           </div>
 
           {error ? (
@@ -352,17 +407,33 @@ If checked, the scan will iteratively scan every address instead. Some networks 
 
           <div className="section-header">
             <h2 className="panel-title">Scan History</h2>
-            {scanHistory.length > 0 ? (
+            <div className="section-header-actions">
               <button
                 type="button"
-                className="btn-clear"
-                onClick={handleClearHistory}
-                disabled={clearing || starting}
-                title="Remove completed scans from history"
+                className="btn-icon"
+                onClick={() =>
+                  refreshHistory().catch((e) =>
+                    setError(e instanceof Error ? e.message : String(e)),
+                  )
+                }
+                disabled={starting}
+                title="Refresh history"
+                aria-label="Refresh history"
               >
-                {clearing ? "Clearing…" : "Clear history"}
+                <img src={refreshIcon} alt="" width={18} height={18} />
               </button>
-            ) : null}
+              {scanHistory.length > 0 ? (
+                <button
+                  type="button"
+                  className="btn-clear"
+                  onClick={handleClearHistory}
+                  disabled={clearing || starting}
+                  title="Remove completed scans from history"
+                >
+                  {clearing ? "Clearing…" : "Clear history"}
+                </button>
+              ) : null}
+            </div>
           </div>
           <div className="history">
             {scanHistory.length === 0 ? (
@@ -372,7 +443,7 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                 <button
                   key={s.scan_id}
                   className={`history-item ${scanId === s.scan_id ? "active" : ""}`}
-                  onClick={() => setScanId(s.scan_id)}
+                  onClick={() => setScanId(scanId === s.scan_id ? null : s.scan_id)}
                 >
                   <div className="history-item-top">
                     <span className="history-id">{s.scan_id.slice(0, 8)}</span>
@@ -462,20 +533,10 @@ If checked, the scan will iteratively scan every address instead. Some networks 
               {status.state !== "failed" &&
               inventory &&
               (status.state === "completed" || status.state === "cancelled") ? (
-                <div className="summary">
-                  <div className="summary-item">
-                    <div className="summary-k">Hosts</div>
-                    <div className="summary-v">
-                      {inventory.scan_metadata.hosts_found}
-                    </div>
-                  </div>
-                  <div className="summary-item">
-                    <div className="summary-k">Duration</div>
-                    <div className="summary-v">
-                      {inventory.scan_metadata.duration_seconds}s
-                    </div>
-                  </div>
-                </div>
+                <Dashboard
+                  inventory={inventory}
+                  defaultGateway={inventory.default_gateway ?? null}
+                />
               ) : null}
 
               {status.state === "failed" && status.error ? (
@@ -498,6 +559,24 @@ If checked, the scan will iteratively scan every address instead. Some networks 
               </p>
             </div>
           ) : scanId && inventory ? (
+            <>
+              <div className="results-view-toggle">
+                <button
+                  type="button"
+                  className={resultsView === "table" ? "active" : ""}
+                  onClick={() => setResultsView("table")}
+                >
+                  Table
+                </button>
+                <button
+                  type="button"
+                  className={resultsView === "map" ? "active" : ""}
+                  onClick={() => setResultsView("map")}
+                >
+                  Map
+                </button>
+              </div>
+              {resultsView === "table" ? (
             <div className="table-wrap">
               <table className="table">
                 <thead>
@@ -526,7 +605,7 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                                   <span
                                     key={port}
                                     className="chip"
-                                    title={`${port} / ${service}`}
+                                    title={getChipTitle(port, service)}
                                   >
                                     <span className="chip-port">{port}</span>
                                     <span className="chip-sep">/</span>
@@ -542,6 +621,13 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                 </tbody>
               </table>
             </div>
+              ) : (
+                <NetworkMap
+                  inventory={inventory}
+                  defaultGateway={inventory.default_gateway ?? null}
+                />
+              )}
+            </>
           ) : scanId &&
             status &&
             (status.state === "queued" || status.state === "running") ? (
