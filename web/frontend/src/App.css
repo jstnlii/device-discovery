@@ -295,6 +295,40 @@
   margin: 0;
 }
 
+.section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.btn-icon:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--bg-elevated);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-icon img {
+  display: block;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
 .btn-clear {
   padding: 6px 10px;
   font-size: 13px;

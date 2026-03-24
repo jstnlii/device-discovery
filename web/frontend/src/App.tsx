@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
+import refreshIcon from "./assets/refreshicon.png";
 import {
   cancelScan,
   clearScanHistory,
@@ -386,17 +387,6 @@ If checked, the scan will iteratively scan every address instead. Some networks 
             >
               {starting ? "Starting..." : "Start Scan"}
             </button>
-            <button
-              className="btn"
-              onClick={() =>
-                refreshHistory().catch((e) =>
-                  setError(e instanceof Error ? e.message : String(e)),
-                )
-              }
-              disabled={starting}
-            >
-              Refresh History
-            </button>
           </div>
 
           {error ? (
@@ -417,17 +407,33 @@ If checked, the scan will iteratively scan every address instead. Some networks 
 
           <div className="section-header">
             <h2 className="panel-title">Scan History</h2>
-            {scanHistory.length > 0 ? (
+            <div className="section-header-actions">
               <button
                 type="button"
-                className="btn-clear"
-                onClick={handleClearHistory}
-                disabled={clearing || starting}
-                title="Remove completed scans from history"
+                className="btn-icon"
+                onClick={() =>
+                  refreshHistory().catch((e) =>
+                    setError(e instanceof Error ? e.message : String(e)),
+                  )
+                }
+                disabled={starting}
+                title="Refresh history"
+                aria-label="Refresh history"
               >
-                {clearing ? "Clearing…" : "Clear history"}
+                <img src={refreshIcon} alt="" width={18} height={18} />
               </button>
-            ) : null}
+              {scanHistory.length > 0 ? (
+                <button
+                  type="button"
+                  className="btn-clear"
+                  onClick={handleClearHistory}
+                  disabled={clearing || starting}
+                  title="Remove completed scans from history"
+                >
+                  {clearing ? "Clearing…" : "Clear history"}
+                </button>
+              ) : null}
+            </div>
           </div>
           <div className="history">
             {scanHistory.length === 0 ? (
