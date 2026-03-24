@@ -419,7 +419,7 @@ def get_mac(ip: str, config: ScannerConfig, cancel_event: Optional[threading.Eve
                 re.IGNORECASE,
             )
         else:
-            output = subprocess.check_output(["arp", "-n", ip]).decode()
+            output = subprocess.check_output(["arp", "-a", ip]).decode()
             match = re.search(
                 r"([0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2})",
                 output,

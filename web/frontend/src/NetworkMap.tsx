@@ -305,6 +305,7 @@ export function NetworkMap({
               <span className="network-map-node-icon">⊕</span>
               <span className="network-map-node-name">{getDisplayName(centerDevice as Device)}</span>
               <span className="network-map-node-ip mono">{centerDevice!.ip}</span>
+              <span className="network-map-node-badge">default gateway</span>
             </motion.div>
 
             {groups.map((g) => (

@@ -1085,6 +1085,18 @@
   max-width: 100%;
 }
 
+.network-map-node-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.network-map-node.network-map-center .network-map-node-badge {
+  opacity: 0.9;
+}
+
 .network-map-node-ip {
   font-size: 11px;
   opacity: 0.8;
