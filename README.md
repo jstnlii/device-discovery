@@ -4,6 +4,10 @@ Network asset discovery tool: discovers live hosts on a subnet, enriches them wi
 
 A bootleg nmap, if you will.
 
+## Screenshot
+
+![Device Discover Table View](data/table_screenshot.png)
+
 **Two ways to use it:**
 
 | Mode       | Description                                                                               |
