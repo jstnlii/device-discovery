@@ -6,8 +6,6 @@ A bootleg nmap, if you will.
 
 ![Device Discover Table View](data/table_screenshot.png)
 
----
-
 **Two ways to use it:**
 
 | Mode       | Description                                                                               |
