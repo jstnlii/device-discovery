@@ -1218,6 +1218,7 @@
 .table th:nth-child(2),
 .table td:nth-child(2) {
   width: 14%;
+  min-width: 0; /* allow long / pill content to wrap instead of spilling into MAC */
 }
 .table th:nth-child(3),
 .table td:nth-child(3) {
@@ -1279,6 +1280,26 @@
 
 .chip-sep {
   opacity: 0.35;
+}
+
+/* Hostname column: inferred default gateway (no DNS name) */
+.hostname-gateway-badge {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: var(--teal);
+  background: var(--teal-bg);
+  border: 1px solid color-mix(in srgb, var(--teal) 38%, transparent);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  overflow-wrap: break-word;
+  vertical-align: middle;
 }
 
 .mono {

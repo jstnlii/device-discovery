@@ -27,6 +27,48 @@ function deviceOpenPortsToText(
   return entries.map(([port, service]) => `${port} (${service})`).join(", ");
 }
 
+/** Last octet is 1 (common convention for subnet routers; not always the default route). */
+function ipv4LastOctetIsOne(ip: string): boolean {
+  const parts = ip.trim().split(".");
+  return (
+    parts.length === 4 &&
+    parts[3] === "1" &&
+    parts.every((p) => /^\d{1,3}$/.test(p))
+  );
+}
+
+function HostnameCell({
+  device,
+  defaultGateway,
+}: {
+  device: InventoryResponse["devices"][number];
+  defaultGateway: string | null;
+}) {
+  const hostname = (device.hostname ?? "").trim();
+  const isUnknown = !hostname || hostname.toLowerCase() === "unknown";
+  const gatewayFromOs = Boolean(defaultGateway?.trim());
+  const matchesDetectedGateway =
+    gatewayFromOs && device.ip === defaultGateway?.trim();
+  const inferredFromDotOneWhenNoOsGateway =
+    !gatewayFromOs && isUnknown && ipv4LastOctetIsOne(device.ip);
+
+  if (isUnknown && (matchesDetectedGateway || inferredFromDotOneWhenNoOsGateway)) {
+    return (
+      <span
+        className="hostname-gateway-badge"
+        title={
+          matchesDetectedGateway
+            ? "This address matches your detected default gateway (typically your router)."
+            : "Default gateway could not be read from this machine. Addresses ending in .1 are often the subnet router (not guaranteed)."
+        }
+      >
+        default gateway
+      </span>
+    );
+  }
+  return <>{hostname || "unknown"}</>;
+}
+
 type Stage =
   | "queued"
   | "discovering"
@@ -592,7 +634,12 @@ If checked, the scan will iteratively scan every address instead. Some networks 
                   {inventory.devices.map((d) => (
                       <tr key={d.ip}>
                         <td className="mono">{d.ip}</td>
-                        <td>{d.hostname}</td>
+                        <td>
+                          <HostnameCell
+                            device={d}
+                            defaultGateway={inventory.default_gateway ?? null}
+                          />
+                        </td>
                         <td className="mono">{d.mac}</td>
                         <td>{d.manufacturer}</td>
                         <td title={deviceOpenPortsToText(d.open_ports)}>
